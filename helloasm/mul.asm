@@ -3,14 +3,28 @@
                 global          _start
 _start:
 
-                sub             rsp, 2 * 128 * 8
-                lea             rdi, [rsp + 128 * 8]
+                sub             rsp, 3 * 128 * 8
+                lea             rdi, [rsp + 2 * 128 * 8]
                 mov             rcx, 128
                 call            read_long
                 mov             rdi, rsp
-                call            read_long
-                lea             rsi, [rsp + 128 * 8]
-                call            add_long_long
+                lea             rsi, [rsp + 2 * 128 * 8]
+                call            set_zero
+                mov             rcx, 128
+                call            copy_long_long
+                mov             rcx, 256
+                sub             rsp, 2 * 128 * 8
+                mov             rdi, rsp
+
+                call            set_zero
+
+                lea             rdi, [rsp + 2 * 128 * 8]
+                mov             rbp, rsp
+
+                call            mul_long_long
+
+
+                mov             rdi, rbp
 
                 call            write_long
 
@@ -18,6 +32,98 @@ _start:
                 call            write_char
 
                 jmp             exit
+
+;считывает по цифре и умножает длинное число на цифру 
+;       rdi -- длинное число на которое умножаем цифру
+;       rax -- регистр на который умножаем длинное число
+mul_long_long:
+
+
+        push            rax
+        push            rdi
+        push            rcx
+        push            rbp
+.loop:
+                call            read_char
+                or              rax, rax
+                js              exit
+                cmp             rax, 0x0a
+                je              .done
+                cmp             rax, '0'
+                jb              .invalid_char
+                cmp             rax, '9'
+                ja              .invalid_char
+                sub             rax, '0'
+                mov             rbx, rax
+                call            mul_long_short    
+                ;rdi - длинное число, умноженное на цифру, rbp - число к которому мы прибавляем, rsi - длинное число, которое мы считали
+
+
+                push            rsi
+                push            rdi
+                mov             rsi, rdi
+                mov             rdi, rbp
+                mov             rbx, 10
+                call            mul_long_short
+                call            add_long_long
+                pop             rdi
+                pop             rsi
+                call            set_zero
+
+                lea             rsi, [rdi + 128 * 8 * 2]
+
+                mov             rcx, 128
+                call            copy_long_long
+
+                jmp             .loop
+
+.done:          
+        pop             rbp
+        pop             rcx
+        pop             rdi
+        pop             rax
+        ret
+
+.invalid_char:
+                mov             rsi, invalid_char_msg
+                mov             rdx, invalid_char_msg_size
+                call            print_string
+                call            write_char
+                mov             al, 0x0a
+                call            write_char
+
+.skip_loop:
+                call            read_char
+                or              rax, rax
+                js              exit
+                cmp             rax, 0x0a
+                je              exit
+                jmp             .skip_loop
+                ret
+
+;copy long long number
+;       rdi -- адрес куда копировать
+;       rsi -- адрес что копировать
+;       rcx -- длина числа в qwords      
+copy_long_long:
+                push            rdi
+                push            rsi
+                push            rcx
+.loop:
+                mov             rax, [rsi]
+                lea             rsi, [rsi + 8]
+                mov             [rdi], rax
+                lea             rdi, [rdi + 8]
+                dec             rcx
+                jnz             .loop
+
+                pop             rcx
+                pop             rsi
+                pop             rdi
+                ret
+
+
+
 
 ; adds two long number
 ;    rdi -- address of summand #1 (long number)
@@ -35,6 +141,29 @@ add_long_long:
                 mov             rax, [rsi]
                 lea             rsi, [rsi + 8]
                 adc             [rdi], rax
+                lea             rdi, [rdi + 8]
+                dec             rcx
+                jnz             .loop
+
+                pop             rcx
+                pop             rsi
+                pop             rdi
+                ret
+
+
+
+
+
+sub_long_long:
+                push            rdi
+                push            rsi
+                push            rcx
+
+                clc
+.loop:
+                mov             rax, [rsi]
+                lea             rsi, [rsi + 8]
+                sbb             [rdi], rax
                 lea             rdi, [rdi + 8]
                 dec             rcx
                 jnz             .loop
@@ -80,6 +209,8 @@ mul_long_short:
                 push            rax
                 push            rdi
                 push            rcx
+                push            rbp
+                push            rsi
 
                 xor             rsi, rsi
 .loop:
@@ -93,6 +224,9 @@ mul_long_short:
                 dec             rcx
                 jnz             .loop
 
+
+                pop             rsi
+                pop             rbp
                 pop             rcx
                 pop             rdi
                 pop             rax
