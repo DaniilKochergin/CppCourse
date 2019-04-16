@@ -15,6 +15,10 @@ struct big_integer {
 
     big_integer(int64 a);
 
+    big_integer(unsigned a);
+
+    big_integer(int a);
+
     explicit big_integer(std::string const &str);
 
     ~big_integer();
@@ -22,6 +26,7 @@ struct big_integer {
     big_integer &operator=(big_integer const &other);
 
     bool operator==(big_integer const &other) const;
+
     bool operator!=(big_integer const &other) const;
 
     bool operator<=(big_integer const &other) const;
@@ -29,7 +34,9 @@ struct big_integer {
     bool operator>(big_integer const &other) const;
 
     bool operator<(big_integer const &other) const;
+
     bool operator>=(big_integer const &other) const;
+
     big_integer &operator+=(big_integer const &other);
 
     big_integer &operator-=(big_integer const &other);
@@ -62,15 +69,17 @@ struct big_integer {
 
     big_integer operator--(int);
 
-    big_integer operator~() const ;
+    big_integer operator~() const;
 
     big_integer abs() const;
 
     void swap(big_integer &b);
 
-    const unsigned get_digit(size_t i) const ;
+    const unsigned get_digit(size_t i) const;
 
     bool is_signed() const;
+
+    size_t length() const;
 
     friend big_integer operator+(big_integer a, big_integer const &b);
 
@@ -93,6 +102,7 @@ struct big_integer {
     friend big_integer operator<<(big_integer a, unsigned b);
 
 private:
+    void make_fit();
 
     big_integer(bool negate, std::vector<unsigned int> const &data);
 
