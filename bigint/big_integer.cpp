@@ -7,6 +7,7 @@ typedef long long int64;
 typedef unsigned long long uint64;
 
 big_integer::big_integer() {
+    v.push_back(0);
     sign = false;
 }
 
@@ -16,21 +17,13 @@ big_integer::big_integer(big_integer const &other) {
     make_fit();
 }
 
-big_integer::big_integer(int64 a) {
-    this->sign = a < 0;
-    if (a < 0) a = -a;
-    v.push_back(a % BASE);
-    v.push_back(a / BASE);
-    make_fit();
-}
-
 big_integer::big_integer(unsigned a) {
     this->sign = 0;
     v.push_back(a);
 }
+
 big_integer::big_integer(int a) {
     this->sign = a < 0;
-    if (a < 0) a = -a;
     v.push_back(a);
 }
 
@@ -88,69 +81,33 @@ bool big_integer::operator>=(big_integer const &other) const {
 }
 
 big_integer &big_integer::operator+=(big_integer const &other) {
-    if (sign != other.sign) {
-        *this -= (-other);
-    } else {
-        uint64 carry = 0;
-        std::vector<unsigned int> res(std::max(other.v.size(), v.size()));
-        for (size_t i = 0; i < res.size(); ++i) {
-            uint64 sum = carry + (i < v.size() ? v[i] : 0) + (i < other.v.size() ? other.v[i] : 0);
-            res[i] = sum;
-            carry = sum / BASE;
-        }
-        if (carry != 0) {
-            res.push_back(carry);
-        }
-        v = res;
+    uint64 carry = 0;
+    std::vector<unsigned int> res(std::max(other.v.size(), v.size()));
+    for (size_t i = 0; i < res.size(); ++i) {
+        uint64 sum = carry + this->get_digit(i) + other.get_digit(i);
+        res[i] = sum;
+        carry = sum / BASE;
     }
+    v = res;
     make_fit();
+    sign = v.back() & (1 << (BASE_SIZE - 1));
     return *this;
 }
 
 big_integer &big_integer::operator-=(big_integer const &other) {
-    if (sign != other.sign) {
-        *this += (-other);
-    } else {
-        uint64 carry = 0;
-        std::vector<unsigned int> res(std::max(other.v.size(), v.size()));
-        if ((!sign && *this >= other) || (sign && *this <= other)) {
-            for (size_t i = 0; i < res.size(); ++i) {
-                int64 sub = static_cast<int64>(v[i]) - (i < other.v.size() ? other.v[i] : 0) - carry;
-                if (sub < 0) {
-                    sub += BASE;
-                    carry = 1;
-                } else {
-                    carry = 0;
-                }
-                res[i] = sub;
-            }
-        } else {
-            for (size_t i = 0; i < res.size(); ++i) {
-                int64 sub = static_cast<int64>(other.v[i]) - (i < v.size() ? v[i] : 0) - carry;
-                if (sub < 0) {
-                    sub += BASE;
-                    carry = 1;
-                } else {
-                    carry = 0;
-                }
-                res[i] = sub;
-            }
-            sign = !sign;
-        }
-        v = res;
-    }
-    make_fit();
-    return *this;
+    return *this += (-other);
 }
 
 big_integer &big_integer::operator*=(big_integer const &other) {
     big_integer res(0);
+    big_integer a(abs());
+    big_integer b(other.abs());
     for (size_t i = 0; i < other.v.size(); ++i) {
         unsigned int carry = 0;
         big_integer tmp;
         tmp.v.resize(i, 0);
         for (size_t j = 0; j < v.size(); ++j) {
-            uint64 sum = carry + static_cast<uint64>(v[j]) * other.v[i];
+            uint64 sum = carry + static_cast<uint64>(a.v[j]) * b.v[i];
             tmp.v.push_back(sum);
             carry = sum / BASE;
         }
@@ -160,7 +117,10 @@ big_integer &big_integer::operator*=(big_integer const &other) {
         res += tmp;
     }
     v = res.v;
-    sign ^= other.sign;
+    if (sign != other.sign) {
+        sign = false;
+        *this = -(*this);
+    }
     make_fit();
     return *this;
 }
@@ -170,7 +130,7 @@ big_integer &big_integer::operator/=(big_integer const &other) {
         throw std::runtime_error("Division by zero");
     }
     big_integer a = abs();
-    big_integer b = other.abs(); //39045157200000000000000000
+    big_integer b = other.abs();
     if (a < b) {
         *this = 0;
         return *this;
@@ -180,7 +140,7 @@ big_integer &big_integer::operator/=(big_integer const &other) {
         return *this;
     }
     big_integer res(0), mod(0);
-    unsigned int f = (BASE / (other.v.back() + 1ll));
+    unsigned int f = (BASE / (b.v.back() + 1ll));
     a *= f;
     b *= f;
     size_t n = a.v.size(), m = b.v.size();
@@ -207,10 +167,11 @@ big_integer &big_integer::operator/=(big_integer const &other) {
         mod -= res_guess;
     }
     big_integer tmp(false, data);
-    *this = tmp;
-    if (sign != other.sign) {
-        sign = !sign;
+    sign ^= other.sign;
+    if (sign) {
+        tmp = -tmp;
     }
+    *this = tmp;
     make_fit();
     return *this;
 }
@@ -244,7 +205,10 @@ big_integer &big_integer::operator|=(big_integer const &other) {
     return *this;
 }
 
-big_integer &big_integer::operator<<=(unsigned int a) {
+big_integer &big_integer::operator<<=(int a) {
+    if (a < 0) {
+        return *this >>= (-a);
+    }
     unsigned int skip = a / BASE_SIZE;
     unsigned move = a % BASE_SIZE;
     a = 1 << move;
@@ -262,10 +226,13 @@ big_integer &big_integer::operator<<=(unsigned int a) {
     return *this;
 }
 
-big_integer &big_integer::operator>>=(unsigned int a) {
+big_integer &big_integer::operator>>=(int a) {
+    if (a < 0) {
+        return *this <<= (-a);
+    }
     unsigned int skip = a / BASE_SIZE;
     unsigned move = a % BASE_SIZE;
-    a = 1 << move;
+    unsigned b = 1 << move;
     if (v.size() <= skip) {
         v.clear();
         v.push_back(0);
@@ -276,19 +243,25 @@ big_integer &big_integer::operator>>=(unsigned int a) {
         tmp.push_back(v[i]);
     }
     v = tmp;
-    *this /= a;
+    *this /= b;
     make_fit();
     return *this;
 }
 
 big_integer &big_integer::operator%=(big_integer const &other) {
     make_fit();
-    return *this = *this - (*this / other) * other;
+    big_integer a = (*this / other) * other;
+    return *this -= a;
 }
 
 big_integer big_integer::operator-() const {
+    if (*this == 0) {
+        return *this;
+    }
     big_integer tmp(*this);
-    tmp.sign ^= true;
+    tmp = ~tmp;
+    ++tmp;
+    tmp.sign = !sign;
     return tmp;
 }
 
@@ -331,7 +304,8 @@ big_integer big_integer::operator~() const {
 }
 
 big_integer big_integer::abs() const {
-    return big_integer(false, v);
+    if (sign) return -(*this);
+    return *this;
 }
 
 void big_integer::swap(big_integer &b) {
@@ -344,7 +318,9 @@ void big_integer::swap(big_integer &b) {
 }
 
 const unsigned big_integer::get_digit(size_t i) const {
-    return v[i];
+    if (i < v.size()) return v[i];
+    if (sign) return MAX_VALUE;
+    return 0;
 }
 
 bool big_integer::is_signed() const {
@@ -399,11 +375,11 @@ big_integer operator|(big_integer a, big_integer const &b) {
     return a |= b;
 }
 
-big_integer operator<<(big_integer a, unsigned int b) {
+big_integer operator<<(big_integer a, int b) {
     return a <<= b;
 }
 
-big_integer operator>>(big_integer a, unsigned int b) {
+big_integer operator>>(big_integer a, int b) {
     return a >>= b;
 }
 
@@ -427,3 +403,8 @@ std::string to_string(big_integer const &value) {
     std::reverse(s.begin(), s.end());
     return s;
 }
+
+//TO DO
+// >> / << for negative numbers
+// rework unary -
+// update mul or div

@@ -51,9 +51,9 @@ struct big_integer {
 
     big_integer &operator|=(big_integer const &other);
 
-    big_integer &operator<<=(unsigned int a);
+    big_integer &operator<<=(int a);
 
-    big_integer &operator>>=(unsigned int a);
+    big_integer &operator>>=(int a);
 
     big_integer &operator%=(big_integer const &other);
 
@@ -97,9 +97,9 @@ struct big_integer {
 
     friend big_integer operator|(big_integer a, big_integer const &b);
 
-    friend big_integer operator>>(big_integer a, unsigned b);
+    friend big_integer operator>>(big_integer a, int b);
 
-    friend big_integer operator<<(big_integer a, unsigned b);
+    friend big_integer operator<<(big_integer a, int b);
 
 private:
     void make_fit();
@@ -109,7 +109,8 @@ private:
     std::vector<unsigned int> v;
     bool sign;
     uint64 const BASE = 1ll << 32;
-    size_t BASE_SIZE = sizeof(unsigned int) * 8;
+    size_t BASE_SIZE = 32;
+    unsigned MAX_VALUE = UINT32_MAX;
 };
 
 std::string to_string(big_integer const &value);
