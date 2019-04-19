@@ -29,8 +29,8 @@ big_integer::big_integer(int a) {
 
 big_integer::big_integer(std::string const &str) {
     bool start = !(str.empty()) && str[0] == '-';
-    sign = !(str.empty()) && str[0] == '-';
     v.push_back(0);
+    sign = false;
     for (size_t i = start; i < str.size(); ++i) {
         (*this) *= 10;
         (*this) += (str[i] - '0');
@@ -100,24 +100,30 @@ big_integer &big_integer::operator-=(big_integer const &other) {
     return *this += (-other);
 }
 
+
 big_integer &big_integer::operator*=(big_integer const &other) {
-    big_integer res(0);
     big_integer a(abs());
     big_integer b(other.abs());
-
-    for (size_t i = 0; i < other.v.size(); ++i) {
+    if (a == 0 || b == 0) {
+        *this = 0;
+        return *this;
+    }
+    big_integer res(0);
+    res.v.resize(a.length() + b.length() + 1, 0);
+    for (size_t i = 0; i < a.length(); ++i) {
         unsigned int carry = 0;
-        big_integer tmp;
-        tmp.v.resize(i, 0);
-        for (size_t j = 0; j < v.size(); ++j) {
-            uint64 sum = carry + static_cast<uint64>(a.v[j]) * b.v[i];
-            tmp.v.push_back(sum);
+        for (size_t j = 0; j < b.length(); ++j) {
+            uint64 sum = res.v[i + j] + static_cast<uint64>(a.v[i]) * b.v[j] + carry;
+            res.v[i + j] = sum;
             carry = sum / BASE;
         }
-        if (carry != 0) {
-            tmp.v.push_back(carry);
+        size_t x = b.length();
+        while (carry != 0) {
+            uint64 sum = static_cast<uint64>(res.v[i + x]) + carry;
+            res.v[i + x] = sum;
+            carry = sum / BASE;
+            x++;
         }
-        res += tmp;
     }
     if (sign ^ other.sign) {
         *this = -res;
@@ -386,9 +392,6 @@ big_integer operator>>(big_integer a, int b) {
 }
 
 std::string to_string(big_integer const &value) {
-    if (value.length() == 0) {
-        throw std::runtime_error("Call function to_string from empty number");
-    }
     big_integer a = value.abs();
     if (value == 0) {
         return "0";
@@ -405,8 +408,3 @@ std::string to_string(big_integer const &value) {
     std::reverse(s.begin(), s.end());
     return s;
 }
-
-//TO DO
-// >> / << for negative numbers
-// rework unary -
-// update mul or div
