@@ -188,7 +188,7 @@ big_integer &big_integer::operator/=(big_integer const &other) {
 
 big_integer &big_integer::operator&=(big_integer const &other) {
     for (size_t i = 0; i < v.size(); ++i) {
-        v[i] &= (i < other.v.size() ? other.v[i] : 0);
+        v[i] &= other.get_digit(i);
     }
     sign &= other.sign;
     make_fit();
@@ -197,7 +197,7 @@ big_integer &big_integer::operator&=(big_integer const &other) {
 
 big_integer &big_integer::operator^=(big_integer const &other) {
     for (size_t i = 0; i < std::max(v.size(), other.v.size()); ++i) {
-        if (i < v.size()) v[i] ^= (i < other.v.size() ? other.v[i] : 0);
+        if (i < v.size()) v[i] ^= other.get_digit(i);
         else v.push_back(other.v[i]);
     }
     sign ^= other.sign;
@@ -207,7 +207,7 @@ big_integer &big_integer::operator^=(big_integer const &other) {
 
 big_integer &big_integer::operator|=(big_integer const &other) {
     for (size_t i = 0; i < std::max(v.size(), other.v.size()); ++i) {
-        if (i < v.size()) v[i] |= (i < other.v.size() ? other.v[i] : 0);
+        if (i < v.size()) v[i] |= other.get_digit(i);
         else v.push_back(other.v[i]);
     }
     sign |= other.sign;
