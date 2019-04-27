@@ -5,15 +5,12 @@
 
 #ifndef BIG_INT
 #define BIG_INT
-typedef long long int64;
 typedef unsigned long long uint64;
 
 struct big_integer {
     big_integer();
 
     big_integer(big_integer const &other);
-
-    big_integer(int64 a);
 
     big_integer(unsigned a);
 
@@ -24,18 +21,6 @@ struct big_integer {
     ~big_integer();
 
     big_integer &operator=(big_integer const &other);
-
-    bool operator==(big_integer const &other) const;
-
-    bool operator!=(big_integer const &other) const;
-
-    bool operator<=(big_integer const &other) const;
-
-    bool operator>(big_integer const &other) const;
-
-    bool operator<(big_integer const &other) const;
-
-    bool operator>=(big_integer const &other) const;
 
     big_integer &operator+=(big_integer const &other);
 
@@ -101,15 +86,28 @@ struct big_integer {
 
     friend big_integer operator<<(big_integer a, int b);
 
+
+    friend bool operator==(big_integer const &a, big_integer const &b);
+
+    friend bool operator!=(big_integer const &a, big_integer const &b);
+
+    friend bool operator<(big_integer const &a, big_integer const &b);
+
+    friend bool operator>(big_integer const &a, big_integer const &b);
+
+    friend bool operator<=(big_integer const &a, big_integer const &b);
+
+    friend bool operator>=(big_integer const &a, big_integer const &b);
+
 private:
     void make_fit();
 
     big_integer(bool negate, std::vector<unsigned int> const &data);
-
+    big_integer & short_divide(unsigned a);
     std::vector<unsigned int> v;
     bool sign;
     uint64 const BASE = 1ll << 32;
-    size_t BASE_SIZE = 32;
+    size_t const BASE_SIZE = 32;
     unsigned MAX_VALUE = UINT32_MAX;
 };
 
