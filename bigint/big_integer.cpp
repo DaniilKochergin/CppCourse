@@ -51,7 +51,7 @@ big_integer &big_integer::operator=(big_integer const &other) {
 
 big_integer &big_integer::operator+=(big_integer const &other) {
     uint64 carry = 0;
-    std::vector<unsigned int> res(std::max(other.length(), length()) + 1);
+    std::vector<unsigned int> res(std::max(other.length(), length()) + 2);
     for (size_t i = 0; i < res.size(); ++i) {
         uint64 sum = carry + get_digit(i) + other.get_digit(i);
         res[i] = sum;
@@ -101,7 +101,7 @@ big_integer &big_integer::operator*=(big_integer const &other) {
     return *this;
 }
 
-big_integer &big_integer::short_divide(unsigned a) {
+big_integer &big_integer::operator/=(unsigned a) {
     uint64 carry = 0;
     std::vector<unsigned> v1;
     for (size_t i = length() - 1; i < length(); --i) {
@@ -115,6 +115,10 @@ big_integer &big_integer::short_divide(unsigned a) {
     return *this;
 }
 
+big_integer &big_integer::operator/=(int val) {
+    return (*this) /= big_integer(val);
+}
+
 big_integer &big_integer::operator/=(big_integer const &other) {
     big_integer a = abs();
     big_integer b = other.abs();
@@ -124,9 +128,9 @@ big_integer &big_integer::operator/=(big_integer const &other) {
     }
     if (b.length() == 1) {
         if (sign ^ other.sign) {
-            return *this = -(a.short_divide(b.v[0]));
+            return *this = -(a / (b.v[0]));
         }
-        return *this = a.short_divide(b.v[0]);
+        return *this = a / (b.v[0]);
     }
     big_integer mod(0);
     unsigned f = (BASE / (b.v.back() + static_cast<uint64 >(1)));
@@ -333,6 +337,14 @@ big_integer operator*(big_integer a, big_integer const &b) {
 }
 
 big_integer operator/(big_integer a, big_integer const &b) {
+    return a /= b;
+}
+
+big_integer operator/(big_integer a, unsigned b) {
+    return a /= b;
+}
+
+big_integer operator/(big_integer a, int b) {
     return a /= b;
 }
 

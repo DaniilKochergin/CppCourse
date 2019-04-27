@@ -30,6 +30,10 @@ struct big_integer {
 
     big_integer &operator/=(big_integer const &other);
 
+    big_integer &operator/=(unsigned a);
+
+    big_integer &operator/=(int a);
+
     big_integer &operator&=(big_integer const &other);
 
     big_integer &operator^=(big_integer const &other);
@@ -73,6 +77,10 @@ struct big_integer {
     friend big_integer operator*(big_integer a, big_integer const &b);
 
     friend big_integer operator/(big_integer a, big_integer const &b);
+
+    friend big_integer operator/(big_integer a, int b);
+
+    friend big_integer operator/(big_integer a, unsigned b);
 
     friend big_integer operator%(big_integer a, big_integer const &b);
 
