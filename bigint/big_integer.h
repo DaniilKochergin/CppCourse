@@ -1,18 +1,20 @@
+#ifndef BIG_INT
+#define BIG_INT
+
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "my_vector.h"
 #include <stdexcept>
-
-#ifndef BIG_INT
-#define BIG_INT
-typedef unsigned long long uint64;
 
 struct big_integer {
     big_integer();
 
     big_integer(big_integer const &other);
 
-    big_integer(unsigned a);
+    big_integer(big_integer && other) noexcept;
+
+    big_integer(uint32_t a);
 
     big_integer(int a);
 
@@ -22,15 +24,19 @@ struct big_integer {
 
     big_integer &operator=(big_integer const &other);
 
+    big_integer &operator+=(int other);
+
     big_integer &operator+=(big_integer const &other);
 
     big_integer &operator-=(big_integer const &other);
+
+    big_integer &operator-=(int other);
 
     big_integer &operator*=(big_integer const &other);
 
     big_integer &operator/=(big_integer const &other);
 
-    big_integer &operator/=(unsigned a);
+    big_integer &operator/=(uint32_t a);
 
     big_integer &operator/=(int a);
 
@@ -52,11 +58,11 @@ struct big_integer {
 
     big_integer &operator++();
 
-    big_integer operator++(int);
+    const big_integer operator++(int);
 
     big_integer &operator--();
 
-    big_integer operator--(int);
+    const big_integer operator--(int);
 
     big_integer operator~() const;
 
@@ -64,7 +70,9 @@ struct big_integer {
 
     void swap(big_integer &b);
 
-    const unsigned get_digit(size_t i) const;
+    void swap(big_integer &&b);
+
+    const uint32_t get_digit(size_t i) const;
 
     bool is_signed() const;
 
@@ -80,7 +88,7 @@ struct big_integer {
 
     friend big_integer operator/(big_integer a, int b);
 
-    friend big_integer operator/(big_integer a, unsigned b);
+    friend big_integer operator/(big_integer a, uint32_t b);
 
     friend big_integer operator%(big_integer a, big_integer const &b);
 
@@ -110,13 +118,12 @@ struct big_integer {
 private:
     void make_fit();
 
-    big_integer(bool negate, std::vector<unsigned int> const &data);
-    big_integer & short_divide(unsigned a);
-    std::vector<unsigned int> v;
+    big_integer(bool negate, my_vector const &data);
+    my_vector v;
     bool sign;
-    uint64 const BASE = 1ll << 32;
-    size_t const BASE_SIZE = 32;
-    unsigned MAX_VALUE = UINT32_MAX;
+    static uint64_t const BASE = 1ll << 32;
+    static size_t const BASE_SIZE = 32;
+    static uint32_t const MAX_VALUE = UINT32_MAX;
 };
 
 std::string to_string(big_integer const &value);

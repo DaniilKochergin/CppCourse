@@ -1,9 +1,6 @@
 #include "big_integer.h"
-#include <string>
-#include <vector>
-#include <stdexcept>
 
-typedef unsigned long long uint64;
+#include "my_vector.h"
 
 big_integer::big_integer() {
     v.push_back(0);
@@ -16,7 +13,7 @@ big_integer::big_integer(big_integer const &other) {
     make_fit();
 }
 
-big_integer::big_integer(unsigned a) {
+big_integer::big_integer(uint32_t a) {
     this->sign = 0;
     v.push_back(a);
 }
@@ -33,14 +30,13 @@ big_integer::big_integer(std::string const &str) {
     for (size_t i = start; i < str.size(); ++i) {
         (*this) *= 10;
         (*this) += (str[i] - '0');
+        // std::cout<<i<<"\n";
     }
     if (start) *this = -*this;
     make_fit();
 }
 
-big_integer::~big_integer() {
-    v.clear();
-}
+big_integer::~big_integer() = default;
 
 big_integer &big_integer::operator=(big_integer const &other) {
     v = other.v;
@@ -50,14 +46,29 @@ big_integer &big_integer::operator=(big_integer const &other) {
 
 
 big_integer &big_integer::operator+=(big_integer const &other) {
-    uint64 carry = 0;
-    std::vector<unsigned int> res(std::max(other.length(), length()) + 2);
+    uint64_t carry = 0;
+    my_vector res(std::max(other.length(), length()) + 2);
     for (size_t i = 0; i < res.size(); ++i) {
-        uint64 sum = carry + get_digit(i) + other.get_digit(i);
+        uint64_t sum = carry + get_digit(i) + other.get_digit(i);
         res[i] = sum;
         carry = sum >> BASE_SIZE;
     }
-    v = res;
+    v.swap(res);
+    sign = v.back() & (1 << (BASE_SIZE - 1));
+    make_fit();
+    return *this;
+}
+
+big_integer &big_integer::operator+=(int other) {
+    uint32_t a = other;
+    uint64_t carry = 0;
+    my_vector res(length() + 2);
+    for (size_t i = 0; i < res.size(); ++i) {
+        uint64_t sum = carry + get_digit(i) + (i >= 1 ? (other < 0 ? MAX_VALUE : 0) : a);
+        res[i] = sum;
+        carry = sum >> BASE_SIZE;
+    }
+    v.swap(res);
     sign = v.back() & (1 << (BASE_SIZE - 1));
     make_fit();
     return *this;
@@ -75,41 +86,43 @@ big_integer &big_integer::operator*=(big_integer const &other) {
         *this = 0;
         return *this;
     }
-    big_integer res(0);
-    res.v.resize(a.length() + b.length() + 1, 0);
+    my_vector res(a.length() + b.length() + 1);
     for (size_t i = 0; i < a.length(); ++i) {
-        unsigned int carry = 0;
+        uint32_t carry = 0;
         for (size_t j = 0; j < b.length(); ++j) {
-            uint64 sum = res.v[i + j] + static_cast<uint64>(a.v[i]) * b.v[j] + carry;
-            res.v[i + j] = sum;
+            uint64_t sum = res[i + j] + static_cast<uint64_t>(a.v[i]) * b.v[j] + carry;
+            res[i + j] = sum;
             carry = sum >> BASE_SIZE;
         }
         size_t x = b.length();
         while (carry != 0) {
-            uint64 sum = static_cast<uint64>(res.v[i + x]) + carry;
-            res.v[i + x] = sum;
+            uint64_t sum = static_cast<uint64_t>(res[i + x]) + carry;
+            res[i + x] = sum;
             carry = sum >> BASE_SIZE;
             x++;
         }
     }
+    v.swap(res);
+
     if (sign ^ other.sign) {
-        *this = -res;
+        sign = false;
+        *this = -*this;
     } else {
-        *this = res;
+        sign = false;
     }
     make_fit();
     return *this;
 }
 
-big_integer &big_integer::operator/=(unsigned a) {
-    uint64 carry = 0;
-    std::vector<unsigned> v1;
+big_integer &big_integer::operator/=(uint32_t a) {
+    uint64_t carry = 0;
+    my_vector v1;
     for (size_t i = length() - 1; i < length(); --i) {
-        uint64 sum = v[i] + (carry << BASE_SIZE);
+        uint64_t sum = v[i] + (carry << BASE_SIZE);
         v1.push_back(sum / a);
         carry = sum % a;
     }
-    std::reverse(v1.begin(), v1.end());
+    std::reverse(v1.start(), v1.start() + v1.size());
     v = v1;
     make_fit();
     return *this;
@@ -133,22 +146,22 @@ big_integer &big_integer::operator/=(big_integer const &other) {
         return *this = a / (b.v[0]);
     }
     big_integer mod(0);
-    unsigned f = (BASE / (b.v.back() + static_cast<uint64 >(1)));
+    uint32_t f = (BASE / (b.v.back() + static_cast<uint64_t> (1)));
     a *= f;
     b *= f;
     size_t n = a.length(), m = b.length();
-    std::vector<unsigned int> data(n - m + 1);
+    my_vector data(n - m + 1);
     mod = a >> ((n - m + 1) * BASE_SIZE);
-    uint64 top = b.v.back();
+    uint64_t top = b.v.back();
     for (size_t i = n - m; i <= n - m; --i) {
         mod <<= BASE_SIZE;
         mod.v[0] = a.v[i];
-        uint64 mod_top = mod.v.back();
+        uint64_t mod_top = mod.v.back();
         if (mod.length() > m) {
             mod_top <<= BASE_SIZE;
             mod_top += mod.v[mod.length() - 2];
         }
-        unsigned guess = std::min(mod_top / top, BASE - 1);
+        uint32_t guess = std::min(mod_top / top, BASE - 1);
         big_integer res_guess = guess * b;
         while (mod < res_guess) {
             guess--;
@@ -200,14 +213,14 @@ big_integer &big_integer::operator<<=(int a) {
     size_t div = a >> 5;
     size_t mod = a & (BASE_SIZE - 1);
     size_t new_size = length() + div + 1;
-    std::vector<unsigned> tmp(new_size);
-    tmp[div] = static_cast<unsigned >(static_cast<uint64>(get_digit(0)) << mod);
+    my_vector tmp(new_size);
+    tmp[div] = static_cast<uint32_t >(static_cast<uint64_t>(get_digit(0)) << mod);
     for (size_t i = div + 1; i < new_size; i++) {
-        unsigned x = static_cast<uint64 >(get_digit(i - div)) << mod;
-        unsigned y = static_cast<uint64>(v[i - div - 1]) >> (BASE_SIZE - mod);
+        uint32_t x = static_cast<uint64_t>(get_digit(i - div)) << mod;
+        uint32_t y = static_cast<uint64_t>(v[i - div - 1]) >> (BASE_SIZE - mod);
         tmp[i] = x | y;
     }
-    v = tmp;
+    v.swap(tmp);
     make_fit();
     return *this;
 }
@@ -217,18 +230,18 @@ big_integer &big_integer::operator>>=(int a) {
         return (*this) <<= a;
     }
     size_t div = a >> 5;
-    unsigned mod = a & (BASE_SIZE - 1);
+    uint32_t mod = a & (BASE_SIZE - 1);
     size_t new_size = 0;
     if (div < (*this).length()) {
         new_size = (*this).length() - div;
     }
-    std::vector<unsigned> tmp(new_size);
+    my_vector tmp(new_size);
     for (size_t i = 0; i < new_size; i++) {
-        unsigned x = static_cast<uint64>(v[i + div]) >> mod;
-        unsigned y = static_cast<uint64>(get_digit(i + div + 1)) << (BASE_SIZE - mod);
+        uint32_t x = static_cast<uint64_t>(v[i + div]) >> mod;
+        uint32_t y = static_cast<uint64_t>(get_digit(i + div + 1)) << (BASE_SIZE - mod);
         tmp[i] = x | y;
     }
-    v = tmp;
+    v.swap(tmp);
     make_fit();
     return *this;
 }
@@ -244,7 +257,9 @@ big_integer big_integer::operator-() const {
         return *this;
     }
     big_integer tmp(*this);
-    tmp = ~tmp;
+    for (size_t i = 0; i < tmp.length(); ++i) {
+        tmp.v[i] = ~tmp.v[i];
+    }
     ++tmp;
     tmp.sign = !sign;
     return tmp;
@@ -259,7 +274,7 @@ big_integer &big_integer::operator++() {
     return *this += 1;
 }
 
-big_integer big_integer::operator++(int) {
+const big_integer big_integer::operator++(int) {
     big_integer tmp = *this;
     ++(*this);
     return tmp;
@@ -269,7 +284,7 @@ big_integer &big_integer::operator--() {
     return *this -= 1;
 }
 
-big_integer big_integer::operator--(int) {
+const big_integer big_integer::operator--(int) {
     big_integer tmp(*this);
     --(*this);
     return tmp;
@@ -295,10 +310,9 @@ void big_integer::swap(big_integer &b) {
     v = b.v;
     b.sign = tmp.sign;
     b.v = tmp.v;
-    make_fit();
 }
 
-const unsigned big_integer::get_digit(size_t i) const {
+const uint32_t big_integer::get_digit(size_t i) const {
     if (i < length()) return v[i];
     if (sign) return MAX_VALUE;
     return 0;
@@ -308,7 +322,7 @@ bool big_integer::is_signed() const {
     return sign;
 }
 
-big_integer::big_integer(bool negate, std::vector<unsigned> const &data) {
+big_integer::big_integer(bool negate, my_vector const &data) {
     v = data;
     sign = negate;
     make_fit();
@@ -340,7 +354,7 @@ big_integer operator/(big_integer a, big_integer const &b) {
     return a /= b;
 }
 
-big_integer operator/(big_integer a, unsigned b) {
+big_integer operator/(big_integer a, uint32_t b) {
     return a /= b;
 }
 
@@ -406,6 +420,22 @@ bool operator>=(big_integer const &a, big_integer const &b) {
     return !(a < b);
 }
 
+big_integer::big_integer(big_integer &&other) noexcept {
+    swap(other);
+}
+
+void big_integer::swap(big_integer &&b) {
+    v.swap(b.v);
+    std::swap(sign, b.sign);
+}
+
+big_integer &big_integer::operator-=(int other) {
+    if (other == INT32_MIN){
+        return *this += (-big_integer(other));
+    }
+    return *this += -other;
+}
+
 
 std::string to_string(big_integer const &value) {
     big_integer a = value.abs();
@@ -414,7 +444,7 @@ std::string to_string(big_integer const &value) {
     }
     std::string s;
     while (a != 0) {
-        unsigned val = (a % 10).get_digit(0);
+        uint32_t val = (a % 10).get_digit(0);
         s.push_back(val + '0');
         a /= 10;
     }
@@ -424,3 +454,7 @@ std::string to_string(big_integer const &value) {
     std::reverse(s.begin(), s.end());
     return s;
 }
+
+//TO DO
+// 1) сделать uint32_t
+// 2) перегрузить все для интов
