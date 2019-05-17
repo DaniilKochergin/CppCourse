@@ -54,7 +54,8 @@ big_integer &big_integer::operator+=(big_integer const &other) {
         carry = sum >> BASE_SIZE;
     }
     v.swap(res);
-    sign = v.back() & (1 << (BASE_SIZE - 1));
+    // uint32_t a = v.back()&(1<<(BASE_SIZE-1));
+    sign = (v.back() >> (BASE_SIZE - 1)) == 1;
     make_fit();
     return *this;
 }
@@ -69,7 +70,7 @@ big_integer &big_integer::operator+=(int other) {
         carry = sum >> BASE_SIZE;
     }
     v.swap(res);
-    sign = v.back() & (1 << (BASE_SIZE - 1));
+    sign = (v.back() >> (BASE_SIZE - 1)) == 1;
     make_fit();
     return *this;
 }
@@ -430,7 +431,7 @@ void big_integer::swap(big_integer &&b) {
 }
 
 big_integer &big_integer::operator-=(int other) {
-    if (other == INT32_MIN){
+    if (other == INT32_MIN) {
         return *this += (-big_integer(other));
     }
     return *this += -other;

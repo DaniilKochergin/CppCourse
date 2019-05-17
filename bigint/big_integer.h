@@ -120,7 +120,7 @@ private:
 
     big_integer(bool negate, my_vector const &data);
     my_vector v;
-    bool sign;
+    bool sign = false;
     static uint64_t const BASE = 1ll << 32;
     static size_t const BASE_SIZE = 32;
     static uint32_t const MAX_VALUE = UINT32_MAX;
