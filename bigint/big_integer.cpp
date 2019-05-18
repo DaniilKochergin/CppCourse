@@ -175,7 +175,7 @@ big_integer &big_integer::operator/=(big_integer const &other) {
     if (sign ^ other.sign) {
         tmp = -tmp;
     }
-    *this = tmp;
+    swap(tmp);
     make_fit();
     return *this;
 }

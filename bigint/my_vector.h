@@ -15,7 +15,7 @@ struct my_vector {
 
     explicit my_vector(size_t n);
 
-    my_vector(my_vector const &other);
+    my_vector(my_vector const &other) noexcept;
 
     size_t size() const;
 

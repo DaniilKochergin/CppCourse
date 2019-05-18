@@ -56,7 +56,7 @@ void my_vector::pop_back() {
     _size--;
 }
 
-my_vector::my_vector(my_vector const &other) {
+my_vector::my_vector(my_vector const &other) noexcept{
     _size = other.size();
     is_big = other.is_big;
     if (is_big) {
