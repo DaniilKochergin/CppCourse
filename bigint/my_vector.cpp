@@ -66,7 +66,7 @@ my_vector::my_vector(my_vector const &other) {
     }
 }
 
-my_vector &my_vector::operator=(my_vector other) {
+my_vector &my_vector::operator=(my_vector other) noexcept{
     swap(other);
     return *this;
 }
@@ -101,6 +101,7 @@ void my_vector::big::ensure_capacity(size_t size) {
     }
 }
 
+my_vector::big::big(size_t size, uint32_t *array) : capacity(size), p(array, std::default_delete<uint32_t[]>()) {}
 
 
 void my_vector::push_back(uint32_t val) {

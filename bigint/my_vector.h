@@ -5,7 +5,6 @@
 #ifndef BIGINT_MY_VECTOR_H
 #define BIGINT_MY_VECTOR_H
 
-#include <iostream>
 #include <memory>
 
 struct my_vector {
@@ -34,7 +33,7 @@ struct my_vector {
 
     friend bool operator==(my_vector const &a, my_vector const &b);
 
-    my_vector &operator=(my_vector other);
+    my_vector &operator=(my_vector other) noexcept;
 
     uint32_t *start() const noexcept;
 
@@ -43,16 +42,15 @@ private:
         size_t capacity;
         std::shared_ptr<uint32_t> p;
 
-        big() : capacity(0), p(nullptr){};
+        big() : capacity(0), p(nullptr) {};
 
         void ensure_capacity(size_t size);
 
-        big(size_t size, uint32_t *array) : capacity(size), p(array, std::default_delete<uint32_t []>()) {};
-
+        big(size_t size, uint32_t *array);
     };
 
     size_t _size;
-    static const size_t SMALL_SIZE = 4;
+    static const size_t SMALL_SIZE = 2;
 
     bool is_big;
 
@@ -60,12 +58,9 @@ private:
         big big_data;
         uint32_t small_data[SMALL_SIZE];
 
-        any_data() {};
-
         ~any_data() {};
 
     } union_data{};
-
 
 
     void make_original();
