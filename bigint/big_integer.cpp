@@ -30,7 +30,6 @@ big_integer::big_integer(std::string const &str) {
     for (size_t i = start; i < str.size(); ++i) {
         (*this) *= 10;
         (*this) += (str[i] - '0');
-        // std::cout<<i<<"\n";
     }
     if (start) *this = -*this;
     make_fit();
@@ -54,7 +53,6 @@ big_integer &big_integer::operator+=(big_integer const &other) {
         carry = sum >> BASE_SIZE;
     }
     v.swap(res);
-    // uint32_t a = v.back()&(1<<(BASE_SIZE-1));
     sign = (v.back() >> (BASE_SIZE - 1)) == 1;
     make_fit();
     return *this;
@@ -455,7 +453,3 @@ std::string to_string(big_integer const &value) {
     std::reverse(s.begin(), s.end());
     return s;
 }
-
-//TO DO
-// 1) сделать uint32_t
-// 2) перегрузить все для интов

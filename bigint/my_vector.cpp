@@ -104,7 +104,7 @@ void my_vector::big::ensure_capacity(size_t size) {
         capacity *= 2;
         auto tmp = new uint32_t[capacity];
         memcpy(tmp, p.get(), size*sizeof(uint32_t));
-        p.reset(tmp);
+        p.reset(tmp, std::default_delete<uint32_t[]>());
     }
 }
 
