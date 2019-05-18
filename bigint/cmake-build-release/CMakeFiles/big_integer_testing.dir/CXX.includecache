@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/daniil/CLionProjects/CppCourse/bigint/big_integer.cpp
+big_integer.h
+/home/daniil/CLionProjects/CppCourse/bigint/big_integer.h
+string
+-
+vector
+-
+stdexcept
+-
+
+/home/daniil/CLionProjects/CppCourse/bigint/big_integer.h
+string
+-
+vector
+-
+algorithm
+-
+stdexcept
+-
+
