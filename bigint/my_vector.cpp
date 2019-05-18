@@ -57,6 +57,7 @@ void my_vector::pop_back() {
     if (_size <= SMALL_SIZE && is_big){
         auto tmp = new uint32_t[_size];
         memcpy(tmp, start(), _size * sizeof(uint32_t));
+        union_data.big_data.~big();
         memcpy(union_data.small_data, tmp, _size * sizeof(uint32_t));
         delete [] tmp;
         is_big = false;
