@@ -1,4 +1,0 @@
-/snap/clion/70/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /home/daniil/CLionProjects/CppCourse/bigint
--- Configuring done
--- Generating done
--- Build files have been written to: /home/daniil/CLionProjects/CppCourse/bigint
