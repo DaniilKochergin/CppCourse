@@ -54,6 +54,13 @@ uint32_t *my_vector::start() const noexcept {
 void my_vector::pop_back() {
     make_original();
     _size--;
+    if (_size <= SMALL_SIZE && is_big){
+        auto tmp = new uint32_t[_size];
+        memcpy(tmp, start(), _size * sizeof(uint32_t));
+        memcpy(union_data.small_data, tmp, _size * sizeof(uint32_t));
+        delete [] tmp;
+        is_big = false;
+    }
 }
 
 my_vector::my_vector(my_vector const &other) noexcept{
